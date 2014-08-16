@@ -104,6 +104,9 @@ def guess_resource_format(url, use_mimetypes=True):
     if resource_format:
         return resource_format
 
+    #add a hack to default http:// to 'text/html':
+    if re.search(r'^http://.*', url) is not None: return "text/html"
+
     return None
 
 
