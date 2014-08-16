@@ -101,8 +101,9 @@ def guess_resource_format(url, use_mimetypes=True):
             return file_type
 
     resource_format, encoding = mimetypes.guess_type(url)
-    if resource_format:
+    if resource_format is not None:
         return resource_format
+    else: log.debug("spatial harvester url: %s resource format return from guess_type is None", url)
 
     #add a hack to default http:// to 'text/html':
     if re.search(r'^http://.*', url) is not None: return "text/html"
