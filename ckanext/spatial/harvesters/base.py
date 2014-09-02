@@ -417,7 +417,7 @@ class SpatialHarvester(HarvesterBase):
                     if protocol:
                         log.debug('Running obtain_resource_protocol for url: %s, protocol: %s', url, protocol)
                         resource['format'] = obtain_resource_protocol(protocol)
-                    if not resource['format']:
+                    if 'format' not in resource or resource['format'] is not None:
                         log.debug('Running guess_resource_format for url: %s', url)
                         resource['format'] = guess_resource_format(url)
 
