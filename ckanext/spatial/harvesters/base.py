@@ -147,7 +147,7 @@ def obtain_resource_protocol(protocol, use_lookup=False):
         'sos': ('OGC:SOS',),
         'gml': ('OGC:GML',),
         'arcims': ('ESRI:ArcIMS',),
-        'sos': ('ESRI:ArcGIS',)
+        'arcgis_rest': ('ESRI:ArcGIS',)
     }
 
     for format, identifiers in sorted(protocol_identifiers.iteritems()):
