@@ -23,6 +23,7 @@ from ckan import model
 from ckan.lib.helpers import json
 from ckan import logic
 from ckan.lib.navl.validators import not_empty
+from ckan.lib.search.index import PackageSearchIndex
 
 from ckanext.harvest.harvesters.base import HarvesterBase
 from ckanext.harvest.model import HarvestObject
@@ -86,7 +87,7 @@ def guess_resource_format(url, use_mimetypes=True):
 
     for resource_type, parts in resource_types.iteritems():
         if any(part in url for part in parts):
-            return resource_type
+            return None , resource_type
 
     file_types = {
         'kml' : ('kml',),
@@ -96,13 +97,14 @@ def guess_resource_format(url, use_mimetypes=True):
 
     for file_type, extensions in file_types.iteritems():
         if any(url.endswith(extension) for extension in extensions):
-            return file_type
+            return None, file_type
 
     resource_format, encoding = mimetypes.guess_type(url)
+    sys.stderr.write("AJS: guess type: %s  %s %s\n" % (resource_format , encoding, url))
     if resource_format:
-        return resource_format
+        return encoding, resource_format
 
-    return None
+    return None, None
 
 
 class SpatialHarvester(HarvesterBase):
@@ -331,9 +333,21 @@ class SpatialHarvester(HarvesterBase):
         if len(resource_locators):
             for resource_locator in resource_locators:
                 url = resource_locator.get('url', '').strip()
+		#sys.stderr.write("AJS: %s\n" % url)
                 if url:
                     resource = {}
-                    resource['format'] = guess_resource_format(url)
+                    encoding, format_from_url = guess_resource_format(url)
+                    resource['format'] = format_from_url if format_from_url else iso_values.get('format', '')
+                    if encoding:
+                        resource['mimetype'] = encoding
+                        resource['mimetype_inner'] =  resource['format']
+                    else:
+                        resource['mimetype'] = resource['format'] 
+                        resource['mimetype_inner'] = ''
+
+		    sys.stderr.write("AJS: %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner']))
+
+
                     if resource['format'] == 'wms' and config.get('ckanext.spatial.harvest.validate_wms', False):
                         # Check if the service is a view service
                         test_url = url.split('?')[0] if '?' in url else url
@@ -349,7 +363,15 @@ class SpatialHarvester(HarvesterBase):
                             'resource_locator_protocol': resource_locator.get('protocol') or '',
                             'resource_locator_function': resource_locator.get('function') or '',
                         })
-                    package_dict['resources'].append(resource)
+                    # AJS - look inside package_dict and see if there is a duplicate before we add it
+                    found = False
+                    for index, item in enumerate(package_dict['resources']):
+			# should we check by name and description as well?
+                        if item['url']==resource['url']:
+                           found = True
+                           break
+                    if found == False:
+                         package_dict['resources'].append(resource)
 
         extras_as_dict = []
         for key, value in extras.iteritems():
@@ -560,6 +582,23 @@ class SpatialHarvester(HarvesterBase):
                 # Delete the previous object to avoid cluttering the object table
                 previous_object.delete()
 
+                # Reindex the corresponding package to update the reference to the
+                # harvest object
+                if harvest_object.package_id:
+                    context.update({'validate': False, 'ignore_auth': True})
+                    try:
+                        package_dict = logic.get_action('package_show')(context,
+                            {'id': harvest_object.package_id})
+                    except p.toolkit.ObjectNotFound:
+                        pass
+                    else:
+                        for extra in package_dict.get('extras', []):
+                            if extra['key'] == 'harvest_object_id':
+                                extra['value'] = harvest_object.id
+                        if package_dict:
+                            package_index = PackageSearchIndex()
+                            package_index.index_package(package_dict)
+
                 log.info('Document with GUID %s unchanged, skipping...' % (harvest_object.guid))
             else:
                 package_schema = logic.schema.default_update_package_schema()
@@ -613,8 +652,6 @@ class SpatialHarvester(HarvesterBase):
         if config_str:
             self.source_config = json.loads(config_str)
             log.debug('Using config: %r', self.source_config)
-        else:
-            self.source_config = {}
 
     def _get_validator(self):
         '''
