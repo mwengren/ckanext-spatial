@@ -199,13 +199,86 @@ class ISOResourceLocator(ISOElement):
         ]
 
 
-class ISOResponsibleParty(ISOElement):
+class ISOResponsiblePartyPOC(ISOElement):
+
 
     elements = [
         ISOElement(
             name="individual-name",
             search_paths=[
                 "gmd:individualName/gco:CharacterString/text()",
+                "gmd:individualName/gmx:Anchor/text()",
+                #"gmd:individualName/gco:CharacterString/text()[../../gmd:role/gmd:CI_RoleCode/@codeListValue='pointofContact'",
+                "gmd:organisationName/gco:CharacterString/text()",
+                "gmd:organisationName/gmx:Anchor/text()",
+                #"gmd:organisationName/gco:CharacterString/text()[../../gmd:role/gmd:CI_RoleCode/@codeListValue='pointofContact'",
+                "gmd:positionName/gco:CharacterString/text()",
+                "gmd:positionName/gmx:Anchor/text()",
+                #"gmd:positionName/gco:CharacterString/text()[../../gmd:role/gmd:CI_RoleCode/@codeListValue='pointofContact'",
+            ],
+            multiplicity="0..1",
+        ),
+        ISOElement(
+            name="organisation-name",
+            search_paths=[
+                "gmd:organisationName/gco:CharacterString/text()",
+            ],
+            multiplicity="0..1",
+        ),
+        ISOElement(
+            name="position-name",
+            search_paths=[
+                "gmd:positionName/gco:CharacterString/text()",
+            ],
+            multiplicity="0..1",
+        ),
+        ISOElement(
+            name="contact-info",
+            search_paths=[
+                "gmd:contactInfo/gmd:CI_Contact",
+            ],
+            multiplicity="0..1",
+            elements = [
+                ISOElement(
+                    name="email",
+                    search_paths=[
+                        "gmd:address/gmd:CI_Address/gmd:electronicMailAddress/gco:CharacterString/text()",
+                    ],
+                    multiplicity="0..1",
+                ),
+                ISOResourceLocator(
+                    name="online-resource",
+                    search_paths=[
+                        "gmd:onlineResource/gmd:CI_OnlineResource",
+                    ],
+                    multiplicity="0..1",
+                ),
+
+            ]
+        ),
+        ISOElement(
+            name="role",
+            search_paths=[
+                "gmd:role/gmd:CI_RoleCode/@codeListValue",
+            ],
+            multiplicity="0..1",
+        ),
+    ]
+
+
+class ISOResponsibleParty(ISOElement):
+
+
+    elements = [
+        ISOElement(
+            name="individual-name",
+            search_paths=[
+                "gmd:individualName/gco:CharacterString/text()",
+                "gmd:individualName/gmx:Anchor/text()",
+                "gmd:organisationName/gco:CharacterString/text()",
+                "gmd:organisationName/gmx:Anchor/text()",
+                "gmd:positionName/gco:CharacterString/text()",
+                "gmd:positionName/gmx:Anchor/text()",
             ],
             multiplicity="0..1",
         ),
@@ -393,6 +466,7 @@ class ISOKeyword(ISOElement):
             name="keyword",
             search_paths=[
                 "gmd:keyword/gco:CharacterString/text()",
+                "gmd:keyword/gmx:Anchor/text()",
             ],
             multiplicity="*",
         ),
@@ -473,7 +547,13 @@ class ISODocument(MappedXmlDocument):
     elements = [
         ISOElement(
             name="guid",
-            search_paths="gmd:fileIdentifier/gco:CharacterString/text()",
+
+            search_paths= [
+                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gmx:Anchor/@xlink:href",
+                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString/text()",
+                 "gmd:fileIdentifier/gco:CharacterString/text()",
+                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString/text()",
+                  ],
             multiplicity="0..1",
         ),
         ISOElement(
@@ -505,6 +585,7 @@ class ISODocument(MappedXmlDocument):
         ISOResponsibleParty(
             name="metadata-point-of-contact",
             search_paths=[
+                "gmd:contact/gmd:CI_ResponsibleParty",
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty",
             ],
@@ -522,6 +603,7 @@ class ISODocument(MappedXmlDocument):
             name="spatial-reference-system",
             search_paths=[
                 "gmd:referenceSystemInfo/gmd:MD_ReferenceSystem/gmd:referenceSystemIdentifier/gmd:RS_Identifier/gmd:code/gco:CharacterString/text()",
+                "gmd:referenceSystemInfo/gmd:MD_ReferenceSystem/gmd:referenceSystemIdentifier/gmd:RS_Identifier/gmd:code/gmx:Anchor/text()",
             ],
             multiplicity="0..1",
         ),
@@ -554,6 +636,7 @@ class ISODocument(MappedXmlDocument):
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString/text()",
                 "gmd:identificationInfo/gmd:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString/text()",
+                "gmd:identificationInfo/gmd:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gmx:Anchor/text()",
             ],
             multiplicity="0..1",
         ),
@@ -589,10 +672,14 @@ class ISODocument(MappedXmlDocument):
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty",
-                "gmd:contact/gmd:CI_ResponsibleParty",
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty",
             ],
             multiplicity="1..*",
         ),
+
+
+
+
         ISOElement(
             name="frequency-of-update",
             search_paths=[
@@ -876,6 +963,7 @@ class ISODocument(MappedXmlDocument):
         self.infer_publisher(values)
         self.infer_contact(values)
         self.infer_contact_email(values)
+        self.infer_contact_name(values)
         return values
 
     def infer_date_released(self, values):
@@ -952,6 +1040,14 @@ class ISODocument(MappedXmlDocument):
                 if value:
                     break
         values['contact-email'] = value
+
+    def infer_contact_name(self, values):
+        value = ''
+        for responsible_party in values['responsible-organisation']:
+            value = responsible_party['individual-name']
+            if value:
+                break
+        values['contact-name'] = value
 
 
 class GeminiDocument(ISODocument):

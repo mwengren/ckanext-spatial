@@ -111,7 +111,7 @@ def guess_resource_format(url, use_mimetypes=True):
                 if re.search(r'{0}'.format(part), url):
                     #if any(part in url for part in parts):
                     log.debug("returning resource type %s (regex pattern match) from guess_resource_format, regex: %s, index: %d", resource_type, part, index)
-                    return resource_type
+                    return None,resource_type
 
     file_types = {
         'kml' : ('kml',),
@@ -127,13 +127,13 @@ def guess_resource_format(url, use_mimetypes=True):
     resource_format, encoding = mimetypes.guess_type(url)
     if resource_format is not None:
         log.debug("returning resource type %s (mime-detection) from guess_resource_format", resource_format)
-        return None,resource_format
+        return encoding, resource_format
     else: log.debug("spatial harvester url: %s resource format return from guess_type is None", url)
 
     #add a hack to default http:// to 'text/html':
     if re.search(r'^http://.*', url) is not None: return None,"text/html"
 
-    return None, None
+    return None,None
 
 
 def obtain_resource_protocol(protocol, use_lookup=False):
@@ -313,6 +313,7 @@ class SpatialHarvester(HarvesterBase):
             'metadata-date',  # Released
             'coupled-resource',
             'contact-email',
+            'contact-name',
             'frequency-of-update',
             'spatial-data-service-type',
         ]:
@@ -411,11 +412,16 @@ class SpatialHarvester(HarvesterBase):
         if len(resource_locators):
             for resource_locator in resource_locators:
                 url = resource_locator.get('url', '').strip()
-		#sys.stderr.write("AJS: %s\n" % url)
                 if url:
                     resource = {}
-                    encoding, format_from_url = guess_resource_format(url)
-                    resource['format'] = format_from_url if format_from_url else iso_values.get('format', '')
+                    protocol =  resource_locator.get('protocol').strip()
+                    if protocol:
+                        log.debug('Running obtain_resource_protocol for url: %s, protocol: %s', url, protocol)
+                        resource['format'] = obtain_resource_protocol(protocol)
+                    if 'format' not in resource or resource['format'] is None:
+                        log.debug('Running guess_resource_format for url: %s', url)
+                        encoding, format_from_url = guess_resource_format(url)
+                        resource['format'] = format_from_url if format_from_url else iso_values.get('format', '')
                     if encoding:
                         resource['mimetype'] = encoding
                         resource['mimetype_inner'] =  resource['format']
@@ -424,11 +430,6 @@ class SpatialHarvester(HarvesterBase):
                         resource['mimetype_inner'] = ''
 
 		    sys.stderr.write("AJS: %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner']))
-
-                    protocol =  resource_locator.get('protocol').strip()
-                    if protocol:
-                        log.debug('Running obtain_resource_protocol for url: %s, protocol: %s', url, protocol)
-                        resource['format'] = obtain_resource_protocol(protocol)
 
                     if resource['format'] == 'wms' and config.get('ckanext.spatial.harvest.validate_wms', False):
                         # Check if the service is a view service
@@ -445,11 +446,12 @@ class SpatialHarvester(HarvesterBase):
                             'resource_locator_protocol': resource_locator.get('protocol') or '',
                             'resource_locator_function': resource_locator.get('function') or '',
                         })
-                    # AJS - look inside package_dict and see if there is a duplicate before we add it
+
+                    # Look inside package_dict and see if there is a duplicate before we add it  
                     found = False
                     for index, item in enumerate(package_dict['resources']):
-			# should we check by name and description as well?
-                        if item['url']==resource['url']:
+			# should we check by description as well?
+                        if item['url']==resource['url'] and item['name']==resource['name']:
                            found = True
                            break
                     if found == False:
@@ -755,6 +757,8 @@ class SpatialHarvester(HarvesterBase):
         if config_str:
             self.source_config = json.loads(config_str)
             log.debug('Using config: %r', self.source_config)
+        else:
+            self.source_config = {}
 
     def _get_validator(self):
         '''
