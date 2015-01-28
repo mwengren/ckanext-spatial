@@ -414,14 +414,8 @@ class SpatialHarvester(HarvesterBase):
                 url = resource_locator.get('url', '').strip()
                 if url:
                     resource = {}
-                    protocol =  resource_locator.get('protocol').strip()
-                    if protocol:
-                        log.debug('Running obtain_resource_protocol for url: %s, protocol: %s', url, protocol)
-                        resource['format'] = obtain_resource_protocol(protocol)
-                    if 'format' not in resource or resource['format'] is None:
-                        log.debug('Running guess_resource_format for url: %s', url)
-                        encoding, format_from_url = guess_resource_format(url)
-                        resource['format'] = format_from_url if format_from_url else iso_values.get('format', '')
+                    encoding, format_from_url = guess_resource_format(url)
+                    resource['format'] = format_from_url if format_from_url else iso_values.get('format', '')
                     if encoding:
                         resource['mimetype'] = encoding
                         resource['mimetype_inner'] =  resource['format']
@@ -430,6 +424,17 @@ class SpatialHarvester(HarvesterBase):
                         resource['mimetype_inner'] = ''
 
 		    sys.stderr.write("AJS: %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner']))
+
+                    protocol =  resource_locator.get('protocol').strip()
+                    if protocol:
+                        log.debug('Running obtain_resource_protocol for url: %s, protocol: %s', url, protocol)
+                        resource['format'] = obtain_resource_protocol(protocol)
+
+                    if 'format' not in resource or resource['format'] is None:
+                        log.debug('Running guess_resource_format for url: %s', url)
+                        encoding, format_from_url = guess_resource_format(url)
+                        resource['format'] = format_from_url if format_from_url else iso_values.get('format', '')
+
 
                     if resource['format'] == 'wms' and config.get('ckanext.spatial.harvest.validate_wms', False):
                         # Check if the service is a view service
