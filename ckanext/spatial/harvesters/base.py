@@ -13,6 +13,8 @@ import dateutil
 import mimetypes
 import urllib
 
+import requests.exceptions
+
 
 from pylons import config
 from owslib import wms
@@ -56,6 +58,71 @@ def guess_standard(content):
     if '</metadata>'.lower() in lowered:
         return 'fgdc'
     return 'unknown'
+
+
+
+def check_url_and_get_metadata(url):
+    """Check whether the given URL is dead or alive.
+    Returns a dict with four keys:
+        "url": The URL that was checked (string)
+        "alive": Whether the URL was working, True or False
+        "status": The HTTP status code of the response from the URL,
+            e.g. 200, 401, 500 (int)
+        "reason": The reason for the success or failure of the check,
+            e.g. "OK", "Unauthorized", "Internal Server Error" (string)
+    The "status" may be None if we did not get a valid HTTP response,
+    e.g. in the event of a timeout, DNS failure or invalid HTTP response.
+    The "reason" will always be a string, but may be a requests library
+    exception string rather than an HTTP reason string if we did not get a valid
+    HTTP response.
+    """
+    result = {"url": url}
+    try:
+        #response = requests.get(url,timeout=0.001)
+        response = requests.get(url)
+        result["status"] = response.status_code
+        result["reason"] = response.reason
+        response.raise_for_status()  # Raise if status_code is not OK.
+        result["alive"] = True
+        contentType = response.headers['content-type']
+        # split the ; off if it exists
+        contentTypeA = contentType.split(";")
+        contentType = contentTypeA[0]
+        result["content-type"] = contentType
+
+	if contentType:
+           if contentType == "text/html":
+              print contentType
+              # Try to get the title
+              regex = re.compile('<title>(.*?)</title>', re.IGNORECASE|re.DOTALL)
+              groups = regex.search(response.text)
+              if groups:
+                result["title"] = groups.group(1)
+    except AttributeError as err:
+        if err.message == "'NoneType' object has no attribute 'encode'":
+            # requests seems to throw these for some invalid URLs.
+            result["alive"] = False
+            result["reason"] = "Invalid URL"
+            result["status"] = None
+        else:
+            raise
+    except requests.exceptions.RequestException as err:
+        result["alive"] = False
+        if "reason" not in result:
+            result["reason"] = str(err)
+        if "status" not in result:
+            # This can happen if the response is invalid HTTP, if we get a DNS
+            # failure, or a timeout, etc.
+            result["status"] = None
+
+    # We should always have these four fields in the result.
+    assert "url" in result
+    assert result.get("alive") in (True, False)
+    assert "status" in result
+    assert "reason" in result
+
+    return result
+
 
 
 def guess_resource_format(url, use_mimetypes=True):
@@ -423,7 +490,41 @@ class SpatialHarvester(HarvesterBase):
                         resource['mimetype'] = resource['format'] 
                         resource['mimetype_inner'] = ''
 
-		    sys.stderr.write("AJS: %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner']))
+                     
+
+                    resource['name']  = resource_locator.get('name')
+
+		    #sys.stderr.write("AJS: %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner']))
+		    log.debug("AJS: %s %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner'],resource['name']))
+ 
+
+                    '''
+                    if 'format' not in resource or resource['format'] is None or not resource['name'] :
+                        log.debug("AJS: getting URL to find format (%s), and/or name (%s) from url (%s)",resource['format'],resource['name'],url)
+
+                        #
+                        # if the file format is known, only try to get the title if it is text/html
+                        #
+                        if 'format' in resource and resource['format'] and resource['format']!="text/html":
+                          # 
+                          log.debug("AJS: can't find a title for non html right now")
+                        else:
+                          weblookup = check_url_and_get_metadata(url)
+                          log.debug("AJS: result: %s ",weblookup)
+
+                          if not resource['name']:
+                            if 'title' in weblookup:
+                                resource['name'] = weblookup['title']
+                          if 'format' not in resource or resource['format']:
+                            if 'content-type' in weblookup:
+                                resource['format'] = weblookup['content-type']
+                                resource['mimetype'] = weblookup['content-type']
+                    '''
+ 
+
+                    if not resource['name']:
+                      resource['name']= p.toolkit._('Unnamed resource')
+
 
                     protocol =  resource_locator.get('protocol').strip()
                     if protocol:
@@ -446,7 +547,6 @@ class SpatialHarvester(HarvesterBase):
                     resource.update(
                         {
                             'url': url,
-                            'name': resource_locator.get('name') or p.toolkit._('Unnamed resource'),
                             'description': resource_locator.get('description') or  '',
                             'resource_locator_protocol': resource_locator.get('protocol') or '',
                             'resource_locator_function': resource_locator.get('function') or '',

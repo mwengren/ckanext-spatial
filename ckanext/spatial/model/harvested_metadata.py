@@ -547,12 +547,15 @@ class ISODocument(MappedXmlDocument):
     elements = [
         ISOElement(
             name="guid",
-
+            #PODv1.1: identifier
             search_paths= [
                  "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gmx:Anchor/@xlink:href",
                  "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString/text()",
-                 "gmd:fileIdentifier/gco:CharacterString/text()",
                  "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString/text()",
+                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gmx:Anchor/@xlink:href",
+                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString/text()",
+                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString/text()",
+                 "gmd:fileIdentifier/gco:CharacterString/text()",
                   ],
             multiplicity="0..1",
         ),
@@ -609,6 +612,7 @@ class ISODocument(MappedXmlDocument):
         ),
         ISOElement(
             name="title",
+            #PODv1.1: title
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString/text()",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString/text()",
@@ -653,6 +657,7 @@ class ISODocument(MappedXmlDocument):
         ),
         ISOElement(
             name="abstract",
+            #PODv1.1: description
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:abstract/gco:CharacterString/text()",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:abstract/gco:CharacterString/text()",
@@ -682,10 +687,11 @@ class ISODocument(MappedXmlDocument):
 
         ISOElement(
             name="frequency-of-update",
+            #PODv1.1: accrualPeriodicity
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceMaintenance/gmd:MD_MaintenanceInformation/gmd:maintenanceAndUpdateFrequency/gmd:MD_MaintenanceFrequencyCode/@codeListValue",
-                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceMaintenance/gmd:MD_MaintenanceInformation/gmd:maintenanceAndUpdateFrequency/gmd:MD_MaintenanceFrequencyCode/@codeListValue",
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceMaintenance/gmd:MD_MaintenanceInformation/gmd:maintenanceAndUpdateFrequency/gmd:MD_MaintenanceFrequencyCode/text()",
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceMaintenance/gmd:MD_MaintenanceInformation/gmd:maintenanceAndUpdateFrequency/gmd:MD_MaintenanceFrequencyCode/@codeListValue",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceMaintenance/gmd:MD_MaintenanceInformation/gmd:maintenanceAndUpdateFrequency/gmd:MD_MaintenanceFrequencyCode/text()",
             ],
             multiplicity="0..1",
@@ -710,6 +716,7 @@ class ISODocument(MappedXmlDocument):
         ),
         ISOKeyword(
             name="keywords",
+            #PODv1.1: keyword
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:descriptiveKeywords/gmd:MD_Keywords",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:descriptiveKeywords/gmd:MD_Keywords",
@@ -750,11 +757,16 @@ class ISODocument(MappedXmlDocument):
         ),
         ISOElement(
             name="access-constraints",
+            #PODv1.1: accessLevel (inference), rights
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:accessConstraints/gmd:MD_RestrictionCode/@codeListValue",
-                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:accessConstraints/gmd:MD_RestrictionCode/@codeListValue",
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:accessConstraints/gmd:MD_RestrictionCode/text()",
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_SecurityConstraints/gmd:classification/gmd:MD_ClassificationCode/@codeListValue",
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceConstraints/gmd:MD_SecurityConstraints/gmd:classification/gmd:MD_ClassificationCode/text()",
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:accessConstraints/gmd:MD_RestrictionCode/@codeListValue",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_LegalConstraints/gmd:accessConstraints/gmd:MD_RestrictionCode/text()",
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_SecurityConstraints/gmd:classification/gmd:MD_ClassificationCode/@codeListValue",
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:resourceConstraints/gmd:MD_SecurityConstraints/gmd:classification/gmd:MD_ClassificationCode/text()",
             ],
             multiplicity="*",
         ),
@@ -808,6 +820,7 @@ class ISODocument(MappedXmlDocument):
         ),
         ISOElement(
             name="dataset-language",
+            #PODv1.1: language
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:language/gmd:LanguageCode/@codeListValue",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:language/gmd:LanguageCode/@codeListValue",
@@ -840,6 +853,7 @@ class ISODocument(MappedXmlDocument):
         ),
         ISOBoundingBox(
             name="bbox",
+            #PODv1.1; spatial
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicBoundingBox",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/srv:extent/gmd:EX_Extent/gmd:geographicElement/gmd:EX_GeographicBoundingBox",
@@ -848,6 +862,7 @@ class ISODocument(MappedXmlDocument):
         ),
         ISOElement(
             name="temporal-extent-begin",
+            #PODv1.1: used for temporal
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:extent/gml:TimePeriod/gml:beginPosition/text()",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/srv:extent/gmd:EX_Extent/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:extent/gml:TimePeriod/gml:beginPosition/text()",
@@ -856,6 +871,7 @@ class ISODocument(MappedXmlDocument):
         ),
         ISOElement(
             name="temporal-extent-end",
+            #PODv1.1: used for temporal
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:extent/gmd:EX_Extent/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:extent/gml:TimePeriod/gml:endPosition/text()",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/srv:extent/gmd:EX_Extent/gmd:temporalElement/gmd:EX_TemporalExtent/gmd:extent/gml:TimePeriod/gml:endPosition/text()",
@@ -974,6 +990,7 @@ class ISODocument(MappedXmlDocument):
                 break
         values['date-released'] = value
 
+    #PODv1.1: modified
     def infer_date_updated(self, values):
         value = ''
         dates = []
@@ -1013,6 +1030,7 @@ class ISODocument(MappedXmlDocument):
                     tags.append(item)
         values['tags'] = tags
 
+    #PODv1.1: publisher > name
     def infer_publisher(self, values):
         value = ''
         for responsible_party in values['responsible-organisation']:
@@ -1030,6 +1048,7 @@ class ISODocument(MappedXmlDocument):
                 break
         values['contact'] = value
 
+    #PODv1.1: contactPoint > hasEmail
     def infer_contact_email(self, values):
         value = ''
         for responsible_party in values['responsible-organisation']:
@@ -1041,6 +1060,7 @@ class ISODocument(MappedXmlDocument):
                     break
         values['contact-email'] = value
 
+    #PODv1.1: contactPoint > fn
     def infer_contact_name(self, values):
         value = ''
         for responsible_party in values['responsible-organisation']:
