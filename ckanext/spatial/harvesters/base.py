@@ -496,9 +496,7 @@ class SpatialHarvester(HarvesterBase):
 
 		    #sys.stderr.write("AJS: %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner']))
 		    log.debug("AJS: %s %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner'],resource['name']))
- 
 
-                    '''
                     if 'format' not in resource or resource['format'] is None or not resource['name'] :
                         log.debug("AJS: getting URL to find format (%s), and/or name (%s) from url (%s)",resource['format'],resource['name'],url)
 
@@ -510,17 +508,15 @@ class SpatialHarvester(HarvesterBase):
                           log.debug("AJS: can't find a title for non html right now")
                         else:
                           weblookup = check_url_and_get_metadata(url)
-                          log.debug("AJS: result: %s ",weblookup)
+                          #log.debug("AJS: result: %s ",weblookup)
 
-                          if not resource['name']:
-                            if 'title' in weblookup:
-                                resource['name'] = weblookup['title']
-                          if 'format' not in resource or resource['format']:
-                            if 'content-type' in weblookup:
-                                resource['format'] = weblookup['content-type']
-                                resource['mimetype'] = weblookup['content-type']
-                    '''
- 
+                          #if not resource['name']:
+                          #  if 'title' in weblookup:
+                          #      resource['name'] = weblookup['title']
+                          #if 'format' not in resource or resource['format']:
+                          #  if 'content-type' in weblookup:
+                          #      resource['format'] = weblookup['content-type']
+                          #      resource['mimetype'] = weblookup['content-type']
 
                     if not resource['name']:
                       resource['name']= p.toolkit._('Unnamed resource')

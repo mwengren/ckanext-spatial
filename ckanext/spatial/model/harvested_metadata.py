@@ -1,5 +1,5 @@
 from lxml import etree
-
+import urllib2
 import logging
 log = logging.getLogger(__name__)
 
@@ -42,7 +42,44 @@ class MappedXmlDocument(MappedXmlObject):
             else:
                 xml_str = self.xml_str
             self.xml_tree = etree.fromstring(xml_str, parser=parser)
+            self.expand_links()
         return self.xml_tree
+
+    def expand_links(self):
+        namespaces = {
+           "gts": "http://www.isotc211.org/2005/gts",
+           "gml": "http://www.opengis.net/gml/3.2",
+           "gmx": "http://www.isotc211.org/2005/gmx",
+           "gsr": "http://www.isotc211.org/2005/gsr",
+           "gss": "http://www.isotc211.org/2005/gss",
+           "gco": "http://www.isotc211.org/2005/gco",
+           "gmd": "http://www.isotc211.org/2005/gmd",
+           "srv": "http://www.isotc211.org/2005/srv",
+           "xlink": "http://www.w3.org/1999/xlink",
+           "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+         }
+
+        xpath = "//*[@xlink:href]"
+        
+        penv = self.xml_tree.xpath(xpath, namespaces=namespaces)
+        for e in penv:
+            actuate = e.get("{http://www.w3.org/1999/xlink}actuate")
+            if not actuate or actuate!="onRequest":
+               child = e.get("{http://www.w3.org/1999/xlink}href")
+               try:
+	          http_response = urllib2.urlopen(child)
+                  child_str = http_response.read()
+                  #log.warn("AJS xml %s", child_str)
+                  parser = etree.XMLParser(remove_blank_text=True)
+                  c = etree.fromstring(child_str, parser=parser)
+                  try:
+                     e.append(c)
+                  except Exception, ex:
+                     log.warn("AJS exception e %s c %s exception: %s",e,c,ex)
+               except Exception, ex:
+                  log.warn("AJS problem opening url %s", child)
+        #print etree.tostring(self.xml_tree)
+
 
     def infer_values(self, values):
         pass
@@ -510,14 +547,16 @@ class ISOAggregationInfo(ISOElement):
         ISOElement(
             name="aggregate-dataset-name",
             search_paths=[
-                "gmd:aggregateDatasetName/gmd:CI_Citation/gmd:title/gco:CharacterString/text()",
+                "gmd:aggregateDataSetName/gmd:CI_Citation/gmd:title/gco:CharacterString/text()",
+                "gmd:aggregateDataSetName/gmd:CI_Citation/gmd:title/gmx:Anchor/text()",
             ],
             multiplicity="0..1",
         ),
         ISOElement(
             name="aggregate-dataset-identifier",
             search_paths=[
-                "gmd:aggregateDatasetIdentifier/gmd:MD_Identifier/gmd:code/gco:CharacterString/text()",
+                "gmd:aggregateDataSetIdentifier/gmd:MD_Identifier/gmd:code/gco:CharacterString/text()",
+                "gmd:aggregateDataSetIdentifier/gmd:MD_Identifier/gmd:code/gmx:Anchor/text()",
             ],
             multiplicity="0..1",
         ),
@@ -677,14 +716,26 @@ class ISODocument(MappedXmlDocument):
             search_paths=[
                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty",
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:pointOfContact/gmd:CI_ResponsibleParty",
-                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty",
             ],
             multiplicity="1..*",
         ),
+        ISOResponsibleParty(
+            name="cited-responsible-organisation",
+            search_paths=[
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty",
+            ],
+            multiplicity="*",
+        ),
 
 
-
-
+        ISOElement(
+            name="maintenance-frequency",
+            #PODv1.1: accrualPeriodicity
+            search_paths=[
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:resourceMaintenance/gmd:MD_MaintenanceInformation/gmd:maintenanceAndUpdateFrequency/gmd:userDefinedMaintenanceFrequency/gts:TM_PeriodDuration/text()",
+            ],
+            multiplicity="0..1",
+        ),
         ISOElement(
             name="frequency-of-update",
             #PODv1.1: accrualPeriodicity
@@ -787,6 +838,7 @@ class ISODocument(MappedXmlDocument):
             ],
             multiplicity="*"
         ),
+
         ISOElement(
             name="spatial-data-service-type",
             search_paths=[
@@ -966,6 +1018,27 @@ class ISODocument(MappedXmlDocument):
             multiplicity="*",
         ),
 
+#AM ADDED: new xpaths 
+#AM Question: are these already defined somewhere else?         
+          ISOElement(
+           name="data-dictionary",
+#         PODv1.1: describedBy; 
+            search_paths=[            
+                "gmd:contentInfo/gmd:MD_FeatureCatalogueDescription/featureCatalogueCitation/CI_Citation/citedResponsibleParty/CI_ResponsibleParty/contactInfo/CI_Contact/onlineResource/CI_OnlineResource/linkage/URL",
+            ],
+            multiplicity="*",
+        ),
+          ISOElement(
+           name="parent-id",
+#           PODv1.1: isPartOf
+            search_paths=[
+                "parentIdentifier/gco:CharacterString/text()",
+                "parentIdentifier/gmx:Anchor/text()",                                
+            ],
+            multiplicity="*",
+        ),
+        
+
     ]
 
     def infer_values(self, values):
@@ -980,6 +1053,8 @@ class ISODocument(MappedXmlDocument):
         self.infer_contact(values)
         self.infer_contact_email(values)
         self.infer_contact_name(values)
+        self.infer_access_level(values)
+        self.infer_is_part_of(values)
         return values
 
     def infer_date_released(self, values):
@@ -991,18 +1066,23 @@ class ISODocument(MappedXmlDocument):
         values['date-released'] = value
 
     #PODv1.1: modified
+    #AM TODO: need to add test for frequency-of-update. In order of preference: 1. frequency-of-update or 2. revision date (below) or 3. dataset_reference_date
     def infer_date_updated(self, values):
         value = ''
         dates = []
-        # Use last of several multiple revision dates.
-        for date in values['dataset-reference-date']:
-            if date['type'] == 'revision':
-                dates.append(date['value'])
 
-        if len(dates):
-            if len(dates) > 1:
+        #if values.has_key('maintenance-frequency') and values['maintenance-frequency']:
+        #  value = values['maintenance-frequency']
+        #  # Use last of several multiple revision dates.
+        #else:
+        for date in values['dataset-reference-date']:
+           if date['type'] == 'revision':
+              dates.append(date['value'])
+
+           if len(dates):
+             if len(dates) > 1:
                 dates.sort(reverse=True)
-            value = dates[0]
+             value = dates[0]
 
         values['date-updated'] = value
 
@@ -1038,7 +1118,7 @@ class ISODocument(MappedXmlDocument):
                 value = responsible_party['organisation-name']
             if value:
                 break
-        values['publisher'] = value
+        values['publisher'] = value.strip()
 
     def infer_contact(self, values):
         value = ''
@@ -1046,11 +1126,28 @@ class ISODocument(MappedXmlDocument):
             value = responsible_party['organisation-name']
             if value:
                 break
-        values['contact'] = value
+        if not value:
+           for responsible_party in values['cited-responsible-organisation']:
+               if isinstance(responsible_party, dict) and \
+                  responsible_party.has_key('role') and  responsible_party['role']=='pointOfContact':
+                    if responsible_party.has_key('person'):
+                       value = responsible_party['person']
+                    elif responsible_party.has_key('person-name'):
+                       value = responsible_party['person-name']
+                    elif responsible_party.has_key('organisation-name'):
+                       value = responsible_party['organisation-name']
+                    elif responsible_party.has_key('position'):
+                       value = responsible_party['position']
+                    if value:
+                        break
+        values['contact'] = value.strip()
 
     #PODv1.1: contactPoint > hasEmail
+    #AM TODO: need to add logic for testing for 'pointOfContact' roleCode
+    # cited-responsible-organisation
     def infer_contact_email(self, values):
         value = ''
+        #    name="role",
         for responsible_party in values['responsible-organisation']:
             if isinstance(responsible_party, dict) and \
                isinstance(responsible_party.get('contact-info'), dict) and \
@@ -1058,17 +1155,78 @@ class ISODocument(MappedXmlDocument):
                 value = responsible_party['contact-info']['email']
                 if value:
                     break
-        values['contact-email'] = value
+        if not value:
+            for responsible_party in values['cited-responsible-organisation']:
+               if isinstance(responsible_party, dict) and \
+                  isinstance(responsible_party.get('role'), dict) and \
+                  responsible_party.get['role']=='pointOfContact':
+                    if isinstance(responsible_party, dict) and \
+                      isinstance(responsible_party.get('contact-info'), dict) and \
+                      responsible_party['contact-info'].has_key('email'):
+                       value = responsible_party['contact-info']['email']
+                       if value:
+                           break
+
+        values['contact-email'] = value.strip()
 
     #PODv1.1: contactPoint > fn
+    #AM TODO: need to add logic for testing for 'pointOfContact' roleCode
     def infer_contact_name(self, values):
         value = ''
         for responsible_party in values['responsible-organisation']:
-            value = responsible_party['individual-name']
+            if isinstance(responsible_party, dict) and \
+            responsible_party.has_key('individual-name'):
+               value = responsible_party['individual-name']
             if value:
                 break
-        values['contact-name'] = value
+        if not value:
+            for responsible_party in values['cited-responsible-organisation']:
+               if isinstance(responsible_party, dict) and \
+                  responsible_party.has_key('role') and \
+                  responsible_party['role']=='pointOfContact':
+                    if responsible_party.has_key('individual-name'):
+                       value = responsible_party['individual-name']
+                       if value:
+                         break
+        values['contact-name'] = value.strip()
 
+    # used by infer_access_level
+    access_constraint_to_level = {
+       'restricted': 'non-public',
+       'confidential': 'non-public',
+       'secret': 'non-public',
+       'topSecret': 'non-public',
+       'copyright': 'restricted public',
+       'patent': 'restricted public',
+       'patentPending': 'restricted public',
+       'trademark': 'restricted public',
+       'license': 'restricted public',
+       'intellectualPropertyRights': 'restricted public',
+    }
+
+
+    def infer_access_level(self,values):
+      value = 'public'
+      for access in values['access-constraints']:
+         value = self.access_constraint_to_level.get(str(access).lower().strip(),'public')
+      values['access-level'] = value
+
+    def infer_is_part_of(self,values):
+      value = ''
+      # look through aggregation-info
+      for aggregate_info in values['aggregation-info']:
+          if isinstance(aggregate_info, dict) and aggregate_info.has_key('association-type'):
+             type = aggregate_info['association-type']
+             if type == "largerWorkCitation":
+                if aggregate_info.has_key('aggregate-dataset-identifier') and aggregate_info['aggregate-dataset-identifier']:
+                    value = aggregate_info['aggregate-dataset-identifier']
+                elif aggregate_info.has_key('aggregate-dataset-name') and aggregate_info['aggregate-dataset-name']:
+                    value = aggregate_info['aggregate-dataset-name']
+      if not value:
+         if values['parent-id']:
+            value = values['parent-id']
+
+      values['part-of'] = value
 
 class GeminiDocument(ISODocument):
     '''
