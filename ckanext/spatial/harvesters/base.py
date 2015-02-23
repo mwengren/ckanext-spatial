@@ -78,8 +78,8 @@ def check_url_and_get_metadata(url):
     """
     result = {"url": url}
     try:
-        #response = requests.get(url,timeout=0.001)
-        response = requests.get(url)
+        response = requests.get(url,timeout=0.5)
+        #response = requests.get(url)
         result["status"] = response.status_code
         result["reason"] = response.reason
         response.raise_for_status()  # Raise if status_code is not OK.
