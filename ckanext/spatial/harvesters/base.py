@@ -6,6 +6,7 @@ import sys
 import logging
 from string import Template
 from urlparse import urlparse
+from urlparse import urldefrag
 from datetime import datetime
 import uuid
 import hashlib
@@ -78,7 +79,7 @@ def check_url_and_get_metadata(url):
     """
     result = {"url": url}
     try:
-        response = requests.get(url,timeout=0.5)
+        response = requests.get(url,timeout=3.5)
         #response = requests.get(url)
         result["status"] = response.status_code
         result["reason"] = response.reason
@@ -507,16 +508,19 @@ class SpatialHarvester(HarvesterBase):
                           # 
                           log.debug("AJS: can't find a title for non html right now")
                         else:
-                          weblookup = check_url_and_get_metadata(url)
-                          #log.debug("AJS: result: %s ",weblookup)
+                          # pull out the fragment
+                          urlparts = urldefrag(url)
 
-                          #if not resource['name']:
-                          #  if 'title' in weblookup:
-                          #      resource['name'] = weblookup['title']
-                          #if 'format' not in resource or resource['format']:
-                          #  if 'content-type' in weblookup:
-                          #      resource['format'] = weblookup['content-type']
-                          #      resource['mimetype'] = weblookup['content-type']
+                          weblookup = check_url_and_get_metadata(urlparts[0])
+                          log.debug("AJS: result: %s ",weblookup)
+
+                          if not resource['name']:
+                            if 'title' in weblookup:
+                                resource['name'] = weblookup['title']
+                          if 'format' not in resource or resource['format']:
+                            if 'content-type' in weblookup:
+                                resource['format'] = weblookup['content-type']
+                                resource['mimetype'] = weblookup['content-type']
 
                     if not resource['name']:
                       resource['name']= p.toolkit._('Unnamed resource')

@@ -1,4 +1,6 @@
 from lxml import etree
+import requests
+import requests_cache
 import urllib2
 import logging
 log = logging.getLogger(__name__)
@@ -67,8 +69,11 @@ class MappedXmlDocument(MappedXmlObject):
             if not actuate or actuate!="onRequest":
                child = e.get("{http://www.w3.org/1999/xlink}href")
                try:
-	          http_response = urllib2.urlopen(child)
-                  child_str = http_response.read()
+	          #http_response = urllib2.urlopen(child)
+                  requests_cache.install_cache('/tmp/ckan_xlink_cache')
+                  response = requests.get(url,timeout=3.5)
+                  child_str = response.text
+                  #child_str = http_response.read()
                   #log.warn("AJS xml %s", child_str)
                   parser = etree.XMLParser(remove_blank_text=True)
                   c = etree.fromstring(child_str, parser=parser)
