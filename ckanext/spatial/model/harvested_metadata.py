@@ -814,15 +814,32 @@ class ISODocument(MappedXmlDocument):
         ISOResourceLocator(
             name="resource-locator",
             search_paths=[
-                "gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource",
-                "gmd:distributionInfo/gmd:MD_Distribution/gmd:distributor/gmd:MD_Distributor/gmd:distributorTransferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource"
+                "//gmd:MD_DigitalTransferOptions//gmd:CI_OnlineResource",
             ],
             multiplicity="*",
         ),
         ISOResourceLocator(
-            name="resource-locator-identification",
+            name="resource-locator-serviceidentification",
             search_paths=[
-                "gmd:identificationInfo//gmd:CI_OnlineResource",
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation/gmd:CI_Citation/gmd:citedResponsibleParty/gmd:CI_ResponsibleParty/gmd:contactInfo/gmd:CI_Contact/gmd:onlineResource/gmd:CI_OnlineResource",
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/srv:containsOperations/srv:SV_OperationMetadata/srv:connectPoint/gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+        ISOResourceLocator(
+            name="resource-locator-dataidentification",
+            search_paths=[
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact//gmd:CI_OnlineResource",
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation//gmd:CI_OnlineResource",
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:aggregationInfo/gmd:MD_AggregateInformation//gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+        ISOResourceLocator(
+            name="resource-locator-keywords",
+            search_paths=[
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:descriptiveKeywords//gmd:CI_OnlineResource",
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:descriptiveKeywords/gmd:MD_Keywords//gmd:CI_OnlineResource",
             ],
             multiplicity="*",
         ),
