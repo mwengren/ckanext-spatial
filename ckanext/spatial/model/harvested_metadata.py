@@ -833,9 +833,23 @@ class ISODocument(MappedXmlDocument):
             multiplicity="*",
         ),
         ISOResourceLocator(
-            name="resource-locator-dataidentification",
+            name="resource-locator-dataidentification-pointofcontact",
             search_paths=[
-                "gmd:identificationInfo/gmd:MD_DataIdentification//gmd:CI_OnlineResource",
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact//gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+         ISOResourceLocator(
+            name="resource-locator-dataidentification-citation",
+            search_paths=[
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation//gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+         ISOResourceLocator(
+            name="resource-locator-dataidentification-aggregationinfo",
+            search_paths=[
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:aggregationInfo//gmd:CI_OnlineResource",
             ],
             multiplicity="*",
         ),
