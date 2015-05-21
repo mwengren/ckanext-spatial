@@ -410,7 +410,9 @@ class SpatialHarvester(HarvesterBase):
         resource_locators = iso_values.get('resource-locator', []) +\
             iso_values.get('resource-locator-serviceidentification-citation', []) +\
             iso_values.get('resource-locator-serviceidentification-containsoperations', []) +\
-            iso_values.get('resource-locator-dataidentification', []) +\
+            iso_values.get('resource-locator-dataidentification-pointofcontact', []) +\
+            iso_values.get('resource-locator-dataidentification-citation', []) +\
+            iso_values.get('resource-locator-dataidentification-aggregationinfo', []) +\
             iso_values.get('resource-locator-keywords', [])
 
         if len(resource_locators):
