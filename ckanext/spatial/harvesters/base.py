@@ -406,8 +406,10 @@ class SpatialHarvester(HarvesterBase):
         else:
             log.debug('No spatial extent defined for this object')
 
+
         resource_locators = iso_values.get('resource-locator', []) +\
-            iso_values.get('resource-locator-serviceidentification', []) +\
+            iso_values.get('resource-locator-serviceidentification-citation', []) +\
+            iso_values.get('resource-locator-serviceidentification-containsoperations', []) +\
             iso_values.get('resource-locator-dataidentification', []) +\
             iso_values.get('resource-locator-keywords', [])
 
