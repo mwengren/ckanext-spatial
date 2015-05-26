@@ -549,10 +549,7 @@ class ISODocument(MappedXmlDocument):
             name="guid",
 
             search_paths= [
-                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gmx:Anchor/@xlink:href",
-                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:identifier/gmd:MD_Identifier/gmd:code/gco:CharacterString/text()",
                  "gmd:fileIdentifier/gco:CharacterString/text()",
-                 "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation/gmd:CI_Citation/gmd:title/gco:CharacterString/text()",
                   ],
             multiplicity="0..1",
         ),
