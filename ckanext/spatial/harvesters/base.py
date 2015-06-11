@@ -423,8 +423,6 @@ class SpatialHarvester(HarvesterBase):
                         resource['mimetype'] = resource['format'] 
                         resource['mimetype_inner'] = ''
 
-		    sys.stderr.write("AJS: %s %s %s \n" % (url, resource['mimetype'], resource['mimetype_inner']))
-
                     protocol =  resource_locator.get('protocol').strip()
                     if protocol:
                         log.debug('Running obtain_resource_protocol for url: %s, protocol: %s', url, protocol)
