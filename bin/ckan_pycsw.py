@@ -147,7 +147,7 @@ def load(pycsw_config, ckan_url):
             log.info('Changed %s' % ckan_id)
         except Exception, err:
             repo.session.rollback()
-            raise RuntimeError, 'ERROR: %s' % str(err)
+            log.error('ERROR: not changed %s Error:%s' % (ckan_id, err))
 
 
 def clear(pycsw_config):
