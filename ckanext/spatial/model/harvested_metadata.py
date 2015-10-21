@@ -896,23 +896,24 @@ class ISODocument(MappedXmlDocument):
             multiplicity="*",
         ),
         ISOResourceLocator(
-            name="resource-locator",
+            name="resource-locator-serviceidentification-containsoperations",
+            search_paths=[
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/srv:containsOperations/srv:SV_OperationMetadata/srv:connectPoint/gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+        ISOResourceLocator(
+            name="resource-locator-digitaltransferoptions",
             search_paths=[
                 "//gmd:MD_DigitalTransferOptions//gmd:CI_OnlineResource",
             ],
             multiplicity="*",
         ),
+        
         ISOResourceLocator(
             name="resource-locator-serviceidentification-citation",
             search_paths=[
                 "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation//gmd:CI_OnlineResource",
-            ],
-            multiplicity="*",
-        ),
-        ISOResourceLocator(
-            name="resource-locator-serviceidentification-containsoperations",
-            search_paths=[
-                "gmd:identificationInfo/srv:SV_ServiceIdentification/srv:containsOperations/srv:SV_OperationMetadata/srv:connectPoint/gmd:CI_OnlineResource",
             ],
             multiplicity="*",
         ),
