@@ -11,6 +11,7 @@ import uuid
 import hashlib
 import dateutil
 import mimetypes
+import urllib
 
 
 from pylons import config
@@ -73,22 +74,44 @@ def guess_resource_format(url, use_mimetypes=True):
     '''
     url = url.lower().strip()
 
+    # replace escaped characters by single chars:
+    url = urllib.unquote(url);
+    log.debug('Started guess_resource_format function, unquoted url: %s', url)
+
     resource_types = {
+        # formats in OGC services:
+        # numeric keys and nested dicts are so rules can be applied in ordered fashion:
+        1: {'image/png': ('format=image/png',)},
+        2: {'application/pdf': ('format=application/pdf',)},
+        3: {'image/jpeg': ('format=image/jpeg',)},
+        4: {'image/gif': ('format=image/gif',)},
+        5: {'image/tiff': ('format=image/tiff','format=image/tiff8')},
+
+        # GeoServer-specific patterns:
+        6: {'kmz': ('geoserver/\w+/wms/kml?layers=\w+:\w+&mode=refresh', 'geoserver/wms/kml?layers=\w+:\w+&mode=refresh')},
+        7: {'kml': ('geoserver/\w+/wms/kml?layers=\w+:\w+&mode=download', 'geoserver/wms/kml?layers=\w+:\w+&mode=download&mode=download', 'geoserver/\w+/wms/kml', 'geoserver/wms/kml')},
+
         # OGC
-        'wms': ('service=wms', 'geoserver/wms', 'mapserver/wmsserver', 'com.esri.wms.Esrimap', 'service/wms'),
-        'wfs': ('service=wfs', 'geoserver/wfs', 'mapserver/wfsserver', 'com.esri.wfs.Esrimap'),
-        'wcs': ('service=wcs', 'geoserver/wcs', 'imageserver/wcsserver', 'mapserver/wcsserver'),
-        'sos': ('service=sos',),
-        'csw': ('service=csw',),
+        8: {'wms': ('service=wms', 'geoserver/wms', 'geoserver/\w+/wms', 'mapserver/wmsserver', 'com.esri.wms.Esrimap', 'service/wms')},
+        9: {'wfs': ('service=wfs', 'geoserver/wfs', 'geoserver/\w+/wfs','mapserver/wfsserver', 'com.esri.wfs.Esrimap')},
+        10: {'wcs': ('service=wcs', 'geoserver/wcs', 'geoserver/\w+/wcs', 'imageserver/wcsserver', 'mapserver/wcsserver')},
+        11: {'sos': ('service=sos',)},
+        12: {'csw': ('service=csw',)},
         # ESRI
-        'kml': ('mapserver/generatekml',),
-        'arcims': ('com.esri.esrimap.esrimap',),
-        'arcgis_rest': ('arcgis/rest/services',),
+        13: {'kml': ('mapserver/generatekml',)},
+        14: {'arcims': ('com.esri.esrimap.esrimap',)},
+        15: {'arcgis_rest': ('arcgis/rest/services',)},
     }
 
-    for resource_type, parts in resource_types.iteritems():
-        if any(part in url for part in parts):
-            return resource_type
+    for index, resource_type_dict in sorted(resource_types.iteritems()):
+        for resource_type, parts in dict(resource_type_dict).iteritems():
+            for part in parts:
+                #expr = re.escape(part)
+                log.debug("resource_type regex check, regex: %s", part)
+                if re.search(r'{0}'.format(part), url):
+                    #if any(part in url for part in parts):
+                    log.debug("returning resource type %s (regex pattern match) from guess_resource_format, regex: %s, index: %d", resource_type, part, index)
+                    return resource_type
 
     file_types = {
         'kml' : ('kml',),
@@ -98,14 +121,43 @@ def guess_resource_format(url, use_mimetypes=True):
 
     for file_type, extensions in file_types.iteritems():
         if any(url.endswith(extension) for extension in extensions):
+            log.debug("returning file type %s (file type detection) from guess_resource_format", file_type)
             return file_type
 
     resource_format, encoding = mimetypes.guess_type(url)
     if resource_format:
+        log.debug("returning resource type %s (mime-detection) from guess_resource_format", resource_format)
         return resource_format
 
     return None
 
+
+def obtain_resource_protocol(protocol, use_lookup=False):
+    log.debug('Started obtain_resource_protocol function, protocol: %s', protocol)
+
+    # use a lookup table for protocol identifiers, such as: https://github.com/OSGeo/Cat-Interop/blob/master/LinkPropertyLookupTable2.csv
+    if use_lookup:
+        # do_something
+        pass
+
+    protocol_identifiers = {
+        'wms': ('OGC:WMS',),
+        'wfs': ('OGC:WFS',),
+        'wcs': ('OGC:WCS',),
+        'sos': ('OGC:SOS',),
+        'gml': ('OGC:GML',),
+        'arcims': ('ESRI:ArcIMS',),
+        'arcgis_rest': ('ESRI:ArcGIS',)
+    }
+
+    for format, identifiers in sorted(protocol_identifiers.iteritems()):
+        for identifier in identifiers:
+            log.debug("protocol_identifiers loop: format: %s, identifier: %s", format, identifier)
+            if re.search(identifier, protocol):
+                log.debug("returning protocol type %s from obtain_resource_protocol, matched identifier: %s", format, identifier)
+                return format
+
+    return None
 
 class SpatialHarvester(HarvesterBase):
 
@@ -202,6 +254,7 @@ class SpatialHarvester(HarvesterBase):
         :returns: A dataset dictionary (package_dict)
         :rtype: dict
         '''
+        log.info('Started get_package_dict function')
 
         tags = []
         if 'tags' in iso_values:
@@ -356,7 +409,14 @@ class SpatialHarvester(HarvesterBase):
                 url = resource_locator.get('url', '').strip()
                 if url:
                     resource = {}
-                    resource['format'] = guess_resource_format(url)
+                    protocol =  resource_locator.get('protocol').strip()
+                    if protocol:
+                        log.debug('Running obtain_resource_protocol for url: %s, protocol: %s', url, protocol)
+                        resource['format'] = obtain_resource_protocol(protocol)
+                    if 'format' not in resource or resource['format'] is None:
+                        log.debug('Running guess_resource_format for url: %s', url)
+                        resource['format'] = guess_resource_format(url)
+
                     if resource['format'] == 'wms' and config.get('ckanext.spatial.harvest.validate_wms', False):
                         # Check if the service is a view service
                         test_url = url.split('?')[0] if '?' in url else url
