@@ -945,7 +945,7 @@ class ISODocument(MappedXmlDocument):
 
     def infer_url(self, values):
         value = ''
-        for locator in values['resource-locator']:
+        for locator in values['resource-locator-digitaltransferoptions']:
             if locator['function'] == 'information':
                 value = locator['url']
                 break
