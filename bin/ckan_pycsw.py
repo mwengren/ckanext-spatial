@@ -72,7 +72,7 @@ def load(pycsw_config, ckan_url):
     while True:
         url = ckan_url + query % start
 
-        response = requests.get(url)
+        response = requests.get(url, verify=False)
         listing = response.json()
         if not isinstance(listing, dict):
             raise RuntimeError, 'Wrong API response: %s' % listing
@@ -167,7 +167,7 @@ def clear(pycsw_config):
 def get_record(context, repo, ckan_url, ckan_id, ckan_info):
     query = ckan_url + 'harvest/object/%s'
     url = query % ckan_info['harvest_object_id']
-    response = requests.get(url)
+    response = requests.get(url, verify=False)
 
     if ckan_info['source'] == 'arcgis':
         return
