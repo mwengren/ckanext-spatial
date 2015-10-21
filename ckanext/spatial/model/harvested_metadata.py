@@ -825,7 +825,6 @@ class ISODocument(MappedXmlDocument):
             ],
             multiplicity="*",
         ),
-        
         ISOResourceLocator(
             name="resource-locator-serviceidentification-citation",
             search_paths=[
