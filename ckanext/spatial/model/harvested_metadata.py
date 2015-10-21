@@ -812,17 +812,51 @@ class ISODocument(MappedXmlDocument):
             multiplicity="*",
         ),
         ISOResourceLocator(
-            name="resource-locator",
+            name="resource-locator-serviceidentification-containsoperations",
             search_paths=[
-                "gmd:distributionInfo/gmd:MD_Distribution/gmd:transferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource",
-                "gmd:distributionInfo/gmd:MD_Distribution/gmd:distributor/gmd:MD_Distributor/gmd:distributorTransferOptions/gmd:MD_DigitalTransferOptions/gmd:onLine/gmd:CI_OnlineResource"
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/srv:containsOperations/srv:SV_OperationMetadata/srv:connectPoint/gmd:CI_OnlineResource",
             ],
             multiplicity="*",
         ),
         ISOResourceLocator(
-            name="resource-locator-identification",
+            name="resource-locator-digitaltransferoptions",
             search_paths=[
-                "gmd:identificationInfo//gmd:CI_OnlineResource",
+                "//gmd:MD_DigitalTransferOptions//gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+        ISOResourceLocator(
+            name="resource-locator-serviceidentification-citation",
+            search_paths=[
+                "gmd:identificationInfo/srv:SV_ServiceIdentification/gmd:citation//gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+        ISOResourceLocator(
+            name="resource-locator-dataidentification-pointofcontact",
+            search_paths=[
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:pointOfContact//gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+         ISOResourceLocator(
+            name="resource-locator-dataidentification-citation",
+            search_paths=[
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:citation//gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+         ISOResourceLocator(
+            name="resource-locator-dataidentification-aggregationinfo",
+            search_paths=[
+                "gmd:identificationInfo/gmd:MD_DataIdentification/gmd:aggregationInfo//gmd:CI_OnlineResource",
+            ],
+            multiplicity="*",
+        ),
+        ISOResourceLocator(
+            name="resource-locator-keywords",
+            search_paths=[
+                "gmd:identificationInfo//gmd:descriptiveKeywords//gmd:CI_OnlineResource",
             ],
             multiplicity="*",
         ),
